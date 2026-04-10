@@ -7,28 +7,21 @@ sns.set(style='darkgrid')
 from datetime import timedelta
 import os
 
-def create_monthly_orders_df(df):
+def create_monthly_orders_df(all_df):
+    all_df['order_approved_at'] = pd.to_datetime(
+        all_df['order_approved_at'],
+        errors='coerce'
+    )
 
-    monthly_orders_df = all_df.resample(rule='M', on='order_approved_at').agg({
-        "order_id": "nunique",
-        "payment_value": "sum",
+    all_df = all_df.dropna(subset=['order_approved_at'])
+
+    monthly_orders_df = all_df.resample(
+        rule='MS',
+        on='order_approved_at'
+    ).agg({
+        'order_id': 'count'
     })
 
-    monthly_orders_df = monthly_orders_df.reset_index()
-    monthly_orders_df.rename(columns={
-        "order_approved_at": "order_month",
-        "order_id": "order_count",
-        "payment_value": "payment"
-    }, inplace=True)
-
-    # Explicitly specify the date format in the to_datetime function
-    monthly_orders_df['order_month'] = pd.to_datetime(monthly_orders_df['order_month'], format='%b-%Y')
-
-    # Filter rows based on the condition
-    recent_month = monthly_orders_df['order_month'].max().replace(day=1)
-    monthly_orders_df = monthly_orders_df[monthly_orders_df['order_month'] < recent_month]
-
-    monthly_orders_df = monthly_orders_df.sort_values('order_month')
     return monthly_orders_df
 
 
